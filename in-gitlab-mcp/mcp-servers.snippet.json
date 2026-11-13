@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "in-gitlab": {
+      "command": "node",
+      "args": [
+        "<替换为 server.js 的绝对路径，如 C:/Users/你的用户名/.codebuddy/in-gitlab-mcp/server.js>"
+      ],
+      "env": {
+        "GITLAB_API_URL": "http://your-gitlab.example.com/api/v4",
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "<在此填写你的 Personal Access Token，强烈建议 scope 用 read_api>",
+        "GITLAB_TIMEOUT_MS": "30000",
+        "GITLAB_READONLY": "1"
+      },
+      "type": "stdio",
+      "disabled": false,
+      "timeout": 60000
+    }
+  }
+}

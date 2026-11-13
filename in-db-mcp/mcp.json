@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "in-db": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "<替换为 dbmcp.jar 的绝对路径>"
+      ],
+      "env": {}
+    }
+  }
+}

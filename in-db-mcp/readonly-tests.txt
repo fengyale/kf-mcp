@@ -1,0 +1,89 @@
+# 只读保护回归用例（每行一条）
+# ===== 期望 ALLOW（合法只读） =====
+SELECT * FROM MED_DRUG_INFO WHERE ROWNUM<=5
+SELECT COUNT(*) AS CNT FROM MED_DRUG_INFO
+WITH c AS (SELECT 1 FROM DUAL) SELECT * FROM c
+SELECT 'delete from x' AS NOTE FROM DUAL
+SELECT * FROM MED_DRUG_INFO WHERE DRUG_NAME LIKE '%update%'
+SELECT 'a;b' AS X FROM DUAL
+SELECT 1--2 FROM DUAL
+SELECT /**/ 1 AS N FROM DUAL
+SELECT DRU_ID, DRU_NAME FROM MED_DRUG_INFO WHERE DRU_ID = 1
+SELECT 1 -- c
+SELECT 1;--
+# ===== 期望 DENY（DML/DDL/权限/事务） =====
+SELECT 1; DELETE FROM MED_DRUG_INFO
+DELETE FROM MED_DRUG_INFO
+delete from MED_DRUG_INFO
+UPDATE MED_DRUG_INFO SET DRUG_NAME='x'
+INSERT INTO MED_DRUG_INFO (ID) VALUES (1)
+DROP TABLE MED_DRUG_INFO
+TRUNCATE TABLE MED_DRUG_INFO
+ALTER TABLE MED_DRUG_INFO ADD COL_X NUMBER
+CREATE TABLE T_TMP (ID NUMBER)
+MERGE INTO T USING S ON (1=1) WHEN MATCHED THEN UPDATE SET X=1
+/*x*/DELETE FROM MED_DRUG_INFO
+WITH c AS (SELECT 1 FROM DUAL) DELETE FROM MED_DRUG_INFO
+BEGIN EXECUTE IMMEDIATE 'DELETE FROM MED_DRUG_INFO'; END
+GRANT DBA TO SCOTT
+REVOKE DBA FROM SCOTT
+COMMIT
+ROLLBACK
+RENAME MED_DRUG_INFO TO MED_DRUG_INFO_OLD
+COMMENT ON TABLE MED_DRUG_INFO IS 'x'
+# ===== 期望 DENY（副作用/DoW 类） =====
+SELECT * FROM MED_DRUG_INFO FOR UPDATE
+SELECT * FROM MED_DRUG_INFO FOR UPDATE NOWAIT
+SELECT * FROM MED_DRUG_INFO INTO OUTFILE '/tmp/x'
+SELECT * FROM MED_DRUG_INFO INTO DUMPFILE '/tmp/x'
+SELECT * INTO NEWTAB FROM MED_DRUG_INFO
+SELECT SLEEP(10) FROM DUAL
+# ===== 期望 DENY（块注释绕过 - 审计修复项） =====
+SELECT * FROM MED_DRUG_INFO INTO/**/OUTFILE '/tmp/x'
+SELECT * FROM MED_DRUG_INFO INTO/**/DUMPFILE '/tmp/x'
+SELECT LOAD_FILE/**/('/etc/passwd')
+SELECT SLEEP/**/(5) FROM DUAL
+SELECT BENCHMARK/**/(1000000,MD5('a'))
+SELECT * FROM MED_DRUG_INFO FOR/**/UPDATE
+SELECT 1 INTO/**/OUTFILE '/tmp/x'
+DELETE/**/FROM MED_DRUG_INFO
+INSERT/**/INTO MED_DRUG_INFO (ID) VALUES (1)
+# ===== 期望 DENY（行注释/多语句绕过） =====
+DELETE
+SELECT 1/*x*/;/*y*/DELETE FROM MED_DRUG_INFO
+# ===== 期望 DENY（第二轮审计： # 行注释 / 反斜杠边界 / 可执行注释）=====
+select sleep#x\n(5)
+select load_file#x\n('/etc/passwd')
+select 'a\'' or 1=1 into outfile '/tmp/x'
+select 'a\'' union select load_file('/etc/passwd'),'2
+select/*!50000 into outfile '/tmp/x'*/1
+select 1 from t#x\n into outfile '/tmp/x'
+# ===== 期望 DENY（第三轮审计：MySQL 中 -- 后无空白不是注释）=====
+select 1 from MED_DRUG_INFO--X into outfile '/tmp/a'
+select DRU_ID from MED_DRUG_INFO where DRU_ID=1--DRU_ID union select load_file('/etc/passwd')
+select 1--x into outfile '/tmp/a'
+select 1 from t where 1=1--a union select load_file('/etc/passwd')
+# ===== 期望 DENY（第四轮：Oracle/SQLServer 危险包与扩展存储过程）=====
+select dbms_lock.sleep(10) from dual
+select dbms_lock.sleep (10) from dual
+select utl_http.request('http://x/') from dual
+select utl_file.fopen('D','f','R') from dual
+select dbms_pipe.receive_message('x',5) from dual
+select dbms_scheduler.create_job('j') from dual
+select dbms_xmlgen.getxmltype('select 1 from dual') from dual
+select sys.dbms_lock.sleep(5) from dual
+select 1 from t@remotelink
+select * from openrowset('x','y','select 1')
+select * from openquery(lnk,'select 1')
+select sp_executesql('select 1')
+select pg_sleep(10)
+# ===== 期望 ALLOW（对照：@ 在字符串字面量内不应误伤）=====
+select 'x@y' as mail from dual
+select * from t where mail like '%@%'
+# ===== 期望 ALLOW（第五轮：@@ 系统全局变量属只读诊断）=====
+select @@version
+select @@max_connections as mc
+select @@global.transaction_isolation as ti
+# ===== 期望 DENY（第五轮：单个 @ 仍拦 —— dblink / 变量赋值）=====
+select @x
+select @x := 1

@@ -1,0 +1,29 @@
+{
+  "audit_log": "",
+  "datasources": [
+    {
+      "name": "oracle_main",
+      "type": "oracle",
+      "desc": "Oracle 主库（示例，改为你的实际库）",
+      "url": "jdbc:oracle:thin:@//HOST:1521/SERVICE_NAME",
+      "user": "YOUR_USER",
+      "pass": "YOUR_PASSWORD"
+    },
+    {
+      "name": "mssql_main",
+      "type": "sqlserver",
+      "desc": "SQL Server 库（示例，密码用环境变量写法）",
+      "url": "jdbc:sqlserver://HOST:1433;DatabaseName=DB",
+      "user": "YOUR_USER",
+      "pass": "${MSSQL_PWD}"
+    },
+    {
+      "name": "mysql_main",
+      "type": "mysql",
+      "desc": "MySQL 库（示例，密码用环境变量写法）",
+      "url": "jdbc:mysql://HOST:3306/DB?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+      "user": "YOUR_USER",
+      "pass": "${MYSQL_PWD}"
+    }
+  ]
+}
